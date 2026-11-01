@@ -85,7 +85,7 @@ export default function Home() {
         textAlign: "center"
       }}
     >
-      <h1>IMDb Movie Explorer</h1>
+      <h1>Movie Explorer</h1>
 
       {loading && !movie && <h2>Loading movies...</h2>}
 
