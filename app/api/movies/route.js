@@ -17,12 +17,12 @@ export async function GET() {
     }
 
     const data = await response.json();
+    return NextResponse.json({
+  movies: data.results,
+  page: data.page,
+  total_pages: data.total_pages
+});
 
-    return NextResponse.json(data.results);
-  } catch {
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    
   }
 }
