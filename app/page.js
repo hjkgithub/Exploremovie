@@ -15,27 +15,22 @@ export default function Home() {
     setError("");
 
     try {
-      const response = await fetch(
-        `/api/movies?page=${pageNumber}`
-      );
+      const res = await fetch(`/api/movies?page=${pageNumber}`);
+      const data = await res.json();
 
-      if (!response.ok) throw new Error();
+      if (!res.ok || !data.movies) {
+        throw new Error(data.error || "Movie loading failed");
+      }
 
-      const data = await response.json();
-
-      if (!data.movies?.length) {
+      if (data.movies.length === 0) {
         setError("No more movies available.");
         return;
       }
 
-      setMovies((previous) => [
-        ...previous,
-        ...data.movies
-      ]);
-
+      setMovies((old) => [...old, ...data.movies]);
       setPage(pageNumber);
-    } catch {
-      setError("Unable to load movies. Please try again.");
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -48,16 +43,10 @@ export default function Home() {
   async function nextMovie() {
     if (index + 1 < movies.length) {
       setIndex(index + 1);
-      return;
-    }
-
-    await loadPage(page + 1);
-    setIndex((current) => current + 1);
-  }
-
-  function previousMovie() {
-    if (index > 0) {
-      setIndex(index - 1);
+    } else {
+      const oldLength = movies.length;
+      await loadPage(page + 1);
+      setIndex(oldLength);
     }
   }
 
@@ -73,47 +62,49 @@ export default function Home() {
     }}>
       <h1>IMDb Movie Explorer</h1>
 
-      {loading && !movie && <h2>Loading movies...</h2>}
+      {loading && !movie && <h2>Loading...</h2>}
+
+      {error && <p>{error}</p>}
 
       {movie && (
         <>
-          {movie.poster_path && (
-            <img
-              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-              alt={movie.title}
-              style={{
-                width: "250px",
-                maxWidth: "90%",
-                borderRadius: "12px"
-              }}
-            />
-          )}
+          <img
+            src={
+              movie.poster_path
+                ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                : "https://placehold.co/500x750/222/fff?text=No+Poster"
+            }
+            alt={movie.title}
+            style={{
+              width: "250px",
+              maxWidth: "90%",
+              borderRadius: "12px"
+            }}
+          />
 
           <h2>{movie.title}</h2>
-          <p>Release date: {movie.release_date}</p>
-          <p>Rating: ⭐ {movie.vote_average?.toFixed(1)}/10</p>
+          <p>Release date: {movie.release_date || "Unknown"}</p>
+          <p>Rating: {movie.vote_average?.toFixed(1)}/10</p>
+          <p>{movie.overview}</p>
 
-          <p style={{ maxWidth: "600px", margin: "20px auto" }}>
-            {movie.overview}
-          </p>
-
-          <button onClick={previousMovie} disabled={index === 0}>
+          <button
+            disabled={index === 0}
+            onClick={() => setIndex(index - 1)}
+          >
             Previous
           </button>
 
           {" "}
 
-          <button onClick={nextMovie} disabled={loading}>
-            {loading ? "Loading..." : "Next"}
+          <button disabled={loading} onClick={nextMovie}>
+            Next
           </button>
 
-          <p>Movie {index + 1}</p>
+          <p>Movie number: {index + 1}</p>
         </>
       )}
 
-      {error && <p>{error}</p>}
-
-      <p style={{ fontSize: "12px", marginTop: "35px" }}>
+      <p style={{ fontSize: "12px" }}>
         This product uses the TMDB API but is not endorsed or certified by TMDB.
       </p>
     </main>
