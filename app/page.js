@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const [movies, setMovies] = useState([]);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,13 +24,25 @@ export default function Home() {
 
       if (data.movies.length === 0) {
         setError("No more movies available.");
-        return;
+        return false;
       }
 
       setMovies((old) => [...old, ...data.movies]);
+
+      if (pageNumber === 1) {
+        const randomIndex = Math.floor(
+          Math.random() * data.movies.length
+        );
+        setIndex(randomIndex);
+      }
+
       setPage(pageNumber);
+      return true;
+
     } catch (err) {
       setError(err.message);
+      return false;
+
     } finally {
       setLoading(false);
     }
@@ -41,28 +53,41 @@ export default function Home() {
   }, []);
 
   async function nextMovie() {
+    if (index === null) return;
+
     if (index + 1 < movies.length) {
       setIndex(index + 1);
     } else {
       const oldLength = movies.length;
-      await loadPage(page + 1);
-      setIndex(oldLength);
+      const success = await loadPage(page + 1);
+
+      if (success) {
+        setIndex(oldLength);
+      }
     }
   }
 
-  const movie = movies[index];
+  function previousMovie() {
+    if (index > 0) {
+      setIndex(index - 1);
+    }
+  }
+
+  const movie = index === null ? null : movies[index];
 
   return (
-    <main style={{
-      background: "#111",
-      color: "white",
-      minHeight: "100vh",
-      padding: "25px",
-      textAlign: "center"
-    }}>
+    <main
+      style={{
+        background: "#111",
+        color: "white",
+        minHeight: "100vh",
+        padding: "25px",
+        textAlign: "center"
+      }}
+    >
       <h1>IMDb Movie Explorer</h1>
 
-      {loading && !movie && <h2>Loading...</h2>}
+      {loading && !movie && <h2>Loading movies...</h2>}
 
       {error && <p>{error}</p>}
 
@@ -83,29 +108,40 @@ export default function Home() {
           />
 
           <h2>{movie.title}</h2>
-          <p>Release date: {movie.release_date || "Unknown"}</p>
-          <p>Rating: {movie.vote_average?.toFixed(1)}/10</p>
+
+          <p>
+            Release date: {movie.release_date || "Unknown"}
+          </p>
+
+          <p>
+            Rating: {movie.vote_average?.toFixed(1)}/10
+          </p>
+
           <p>{movie.overview}</p>
 
           <button
             disabled={index === 0}
-            onClick={() => setIndex(index - 1)}
+            onClick={previousMovie}
           >
             Previous
           </button>
 
           {" "}
 
-          <button disabled={loading} onClick={nextMovie}>
+          <button
+            disabled={loading}
+            onClick={nextMovie}
+          >
             Next
           </button>
 
-          
+          <p>Movie number: {index + 1}</p>
         </>
       )}
 
       <p style={{ fontSize: "12px" }}>
-        This product uses the TMDB API but is not endorsed or certified by TMDB.
+        This product uses the TMDB API but is not endorsed
+        or certified by TMDB.
       </p>
     </main>
   );
