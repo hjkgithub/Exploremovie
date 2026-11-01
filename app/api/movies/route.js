@@ -1,27 +1,43 @@
+
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = searchParams.get("page") || "1";
     const key = process.env.TMDB_API_KEY;
 
+    if (!key) {
+      return NextResponse.json(
+        { error: "TMDB API key is missing" },
+        { status: 500 }
+      );
+    }
+
     const response = await fetch(
-      `https://api.themoviedb.org/3/movie/popular?api_key=${key}&language=en-US&page=1`,
+      `https://api.themoviedb.org/3/movie/popular?api_key=${key}&language=en-US&page=${page}`,
       { cache: "no-store" }
     );
 
+    const data = await response.json();
+
     if (!response.ok) {
       return NextResponse.json(
-        { error: "Unable to fetch movies" },
+        { error: data.status_message || "Unable to fetch movies" },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
     return NextResponse.json({
-  movies: data.results,
-  page: data.page,
-  total_pages: data.total_pages
-});
+      movies: data.results,
+      page: data.page,
+      total_pages: data.total_pages
+    });
 
-    
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
 }
