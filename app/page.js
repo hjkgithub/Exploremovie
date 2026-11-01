@@ -135,7 +135,7 @@ export default function Home() {
             Next
           </button>
 
-          <p>Movie number: {index + 1}</p>
+          
         </>
       )}
 
