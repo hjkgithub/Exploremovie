@@ -9,21 +9,22 @@ export async function GET(request) {
 
     if (!key) {
       return NextResponse.json(
-        { error: "TMDB API key is missing" },
+        { error: "API key missing" },
         { status: 500 }
       );
     }
 
-    const response = await fetch(
-      `https://api.themoviedb.org/3/movie/popular?api_key=${key}&language=en-US&page=${page}`,
-      { cache: "no-store" }
-    );
+    const url = `https://api.themoviedb.org/3/movie/popular?api_key=${key}&language=en-US&page=${page}`;
+
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: data.status_message || "Unable to fetch movies" },
+        { error: data.status_message || "TMDB error" },
         { status: response.status }
       );
     }
@@ -36,7 +37,7 @@ export async function GET(request) {
 
   } catch (error) {
     return NextResponse.json(
-      { error: "Something went wrong" },
+      { error: "Server error" },
       { status: 500 }
     );
   }
